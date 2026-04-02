@@ -458,6 +458,8 @@ function buildImplementationPrompt(state: WorkflowState, cwd: string): string {
 	return [
 		`Implement the approved plan in ${planFile}.`,
 		`When you finish a task or phase, mark its checkbox as completed in ${planFile}.`,
+		"Use red/green TDD whenever a test harness exists: write or update the test first, run it and observe it fail, then implement the minimal code, then rerun the test and watch it pass.",
+		"Prefer the smallest targeted test command that proves the behavior before broad validation.",
 		"Do not stop until all in-scope tasks are complete.",
 		"Do not add unnecessary comments or JSDoc.",
 		"Do not use any or unknown types.",
@@ -519,6 +521,8 @@ function buildStageInstructions(state: WorkflowState, cwd: string): string | und
 						"Current stage: IMPLEMENTATION",
 						`- ${planFile} is the approved source of truth. Execute it with minimal improvisation.`,
 						`- Mark completed task-list items in ${planFile} as you go.`,
+						"- Use red/green TDD whenever a test harness exists: write or update a targeted test first, run it and observe the failure, then implement the minimum code, then rerun it until it passes.",
+						"- Prefer the smallest targeted test command first, then broaden validation.",
 						"- Do not add unnecessary comments or JSDoc.",
 						"- Do not use any or unknown types.",
 						"- Run typecheck or the closest project validation command continuously.",
@@ -1021,6 +1025,9 @@ export default function borisWorkflowExtension(pi: ExtensionAPI) {
 		restoreFromBranch(ctx);
 		if (state && (state.stage !== "idle" || state.task)) ensureRequiredTools();
 		updateUi(ctx);
+		if (ctx.hasUI) {
+			ctx.ui.notify("pi-boris loaded · use /boris-start to begin", "info");
+		}
 	});
 
 	pi.on("session_switch", async (_event, ctx) => {

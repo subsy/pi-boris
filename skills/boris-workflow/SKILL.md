@@ -76,6 +76,7 @@ Implementation should not start until this exists.
 ### 5. Implementation
 
 Only after approval, execute the plan and mark tasks complete in `plan.md`.
+Use red/green TDD whenever a test harness exists: write or update the test first, run it and observe the failure, then implement the minimum code and rerun until it passes.
 
 ## If commands are unavailable
 

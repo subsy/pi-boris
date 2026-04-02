@@ -54,6 +54,7 @@ Inside each folder it maintains:
 - During planning/annotation, only the feature's `plan.md` can be edited.
 - During planning/annotation/todo generation, the extension tries to auto-open the active `plan.md` in your external editor.
 - During implementation, full code editing is allowed again.
+- During implementation, the workflow now explicitly pushes red/green TDD when a test harness exists: write/update the test first, run it to see it fail, then implement, then rerun until it passes.
 - A widget above the editor shows the current stage, docs folder, and implementation progress.
 - Custom rendered stage banners show Boris workflow transitions in the chat.
 - Tree checkpoints are labeled at each stage start and completion checkpoint.
