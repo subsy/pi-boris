@@ -52,7 +52,7 @@ const DESTRUCTIVE_PATTERNS = [
 	/\bcp\b/i,
 	/\bmkdir\b/i,
 	/\btouch\b/i,
-	/(^|[^<])>(?!>)/,
+	/(^|[^<&0-9])>(?!>|&)/,
 	/>>/,
 	/\bnpm\s+(install|uninstall|update|ci|link|publish)\b/i,
 	/\byarn\s+(add|remove|install|publish)\b/i,
@@ -109,11 +109,9 @@ const SAFE_READONLY_PATTERNS = [
 	/^\s*yarn\s+(list|info|why|audit)\b/i,
 	/^\s*node\s+--version\b/i,
 	/^\s*python\s+--version\b/i,
-	/^\s*curl\b/i,
 	/^\s*wget\s+-O\s*-$|^\s*wget\s+-O\s+-\b/i,
 	/^\s*jq\b/i,
 	/^\s*sed\s+-n\b/i,
-	/^\s*awk\b/i,
 	/^\s*rg\b/i,
 	/^\s*fd\b/i,
 	/^\s*bat\b/i,
@@ -377,7 +375,7 @@ function summarizeChecklist(items: ChecklistItem[]): { done: number; total: numb
 
 function isSafeReadonlyCommand(command: string): boolean {
 	const segments = command
-		.split(/&&|;|\n/)
+		.split(/&&|\|\||;|\n|\|/)
 		.map((segment) => segment.trim())
 		.filter(Boolean);
 	if (segments.length === 0) return false;
@@ -768,7 +766,7 @@ export default function borisWorkflowExtension(pi: ExtensionAPI) {
 	async function transition(
 		ctx: ExtensionContext,
 		stage: ActiveStage,
-		prompt: string,
+		prompt: string | ((state: WorkflowState) => string),
 		options?: {
 			task?: string;
 			newFeature?: boolean;
@@ -785,6 +783,7 @@ export default function borisWorkflowExtension(pi: ExtensionAPI) {
 			assignFeatureDocs(current, ctx.cwd, current.task, Boolean(options?.newFeature), options?.categoryOverride);
 		}
 		const created = ensureArtifacts(current);
+		const resolvedPrompt = typeof prompt === "function" ? prompt(current) : prompt;
 		current.stage = stage;
 		ensureRequiredTools();
 		const run = bumpPhaseCounter(current, stage);
@@ -806,7 +805,7 @@ export default function borisWorkflowExtension(pi: ExtensionAPI) {
 		if (ctx.hasUI && created.length > 0) {
 			ctx.ui.notify(`Created ${created.map((path) => relativeToCwd(path, ctx.cwd)).join(", ")}`, "info");
 		}
-		await sendWorkflowPrompt(ctx, prompt);
+		await sendWorkflowPrompt(ctx, resolvedPrompt);
 	}
 
 	async function runReviewLoop(args: string, ctx: ExtensionContext) {
@@ -834,10 +833,7 @@ export default function borisWorkflowExtension(pi: ExtensionAPI) {
 				}
 				return;
 			}
-			const previewState = defaultState(ctx.cwd);
-			previewState.task = task;
-			assignFeatureDocs(previewState, ctx.cwd, task, true, parsed.categoryOverride);
-			await transition(ctx, "research", buildResearchPrompt(task, previewState, ctx.cwd), {
+			await transition(ctx, "research", (s) => buildResearchPrompt(task, s, ctx.cwd), {
 				task,
 				newFeature: true,
 				sessionName: `Boris: ${task}`,
@@ -1030,19 +1026,7 @@ export default function borisWorkflowExtension(pi: ExtensionAPI) {
 		}
 	});
 
-	pi.on("session_switch", async (_event, ctx) => {
-		restoreFromBranch(ctx);
-		if (state && (state.stage !== "idle" || state.task)) ensureRequiredTools();
-		updateUi(ctx);
-	});
-
 	pi.on("session_tree", async (_event, ctx) => {
-		restoreFromBranch(ctx);
-		if (state && (state.stage !== "idle" || state.task)) ensureRequiredTools();
-		updateUi(ctx);
-	});
-
-	pi.on("session_fork", async (_event, ctx) => {
 		restoreFromBranch(ctx);
 		if (state && (state.stage !== "idle" || state.task)) ensureRequiredTools();
 		updateUi(ctx);
