@@ -1,6 +1,6 @@
 # pi-boris
 
-An opinionated pi package that codifies Boris Tane's workflow:
+An opinionated pi package that codifies a neat workflow shared by Boris Tane:
 
 1. deep research into the existing codebase
 2. a written research document
