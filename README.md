@@ -9,6 +9,12 @@ An opinionated pi package that codifies Boris Tane's workflow:
 5. implementation only after the plan is approved
 6. checkbox progress tracked in the plan document
 
+## Install
+
+```bash
+pi install git:github.com/subsy/pi-boris
+```
+
 ## Docs layout
 
 Every new feature/work item gets its own folder under `docs/`.
